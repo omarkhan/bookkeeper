@@ -118,7 +118,7 @@ class AccountBase(object):
         "Create an AccountEntry with the given data."
         raise NotImplementedError()
 
-    def _new_transaction(self):  # pragma: no coverage
+    def _new_transaction(self, **kwargs):  # pragma: no coverage
         "Create a new transaction"
         raise NotImplementedError()
 
@@ -139,25 +139,25 @@ class AccountBase(object):
     def _DEBIT_IN_DB(self):
         return 1
 
-    def debit(self, amount, credit_account, description, debit_memo="", credit_memo="", datetime=None):
+    def debit(self, amount, credit_account, description, debit_memo="", credit_memo="", *args, **kwargs):
         """ Post a debit of 'amount' and a credit of -amount against this account and credit_account respectively.
 
         note amount must be non-negative.
         """
 
         assert amount >= 0
-        return self.post(amount, credit_account, description, self_memo=debit_memo, other_memo=credit_memo, datetime=datetime)
+        return self.post(amount, credit_account, description, self_memo=debit_memo, other_memo=credit_memo, *args, **kwargs)
 
-    def credit(self, amount, debit_account, description, debit_memo="", credit_memo="", datetime=None):
+    def credit(self, amount, debit_account, description, debit_memo="", credit_memo="", *args, **kwargs):
         """ Post a credit of 'amount' and a debit of -amount against this account and credit_account respectively.
 
         note amount must be non-negative.
         """
         assert amount >= 0
-        return self.post(-amount, debit_account, description, self_memo=credit_memo, other_memo=debit_memo, datetime=datetime)
+        return self.post(-amount, debit_account, description, self_memo=credit_memo, other_memo=debit_memo, *args, **kwargs)
 
     @transaction.atomic
-    def post(self, amount, other_account, description, self_memo="", other_memo="", datetime=None):
+    def post(self, amount, other_account, description, self_memo="", other_memo="", datetime=None, transaction_kwargs=None):
         """ Post a transaction of 'amount' against this account and the negative amount against 'other_account'.
 
         This will show as a debit or credit against this account when amount > 0 or amount < 0 respectively.
@@ -165,7 +165,9 @@ class AccountBase(object):
 
         #Note: debits are always positive, credits are always negative.  They should be negated before displaying
         #(expense and liability?) accounts
-        tx = self._new_transaction()
+        if transaction_kwargs is None:
+            transaction_kwargs = {}
+        tx = self._new_transaction(**transaction_kwargs)
 
         if datetime:
             tx.t_stamp = datetime
@@ -306,9 +308,8 @@ class ThirdPartySubAccount(AccountBase):
             self._third_party._associate_entry(ae)
         return ae
 
-    def _new_transaction(self):
-        tx = self._parent._new_transaction()
-        return tx
+    def _new_transaction(self, **kwargs):
+        return self._parent._new_transaction(**kwargs)
 
     def _entries(self):
         qs = self._parent._entries()
@@ -340,8 +341,8 @@ class ProjectAccount(ThirdPartySubAccount):
     def get_bookset(self):
         return self._project.get_bookset()
 
-    def _new_transaction(self):
-        tx = super(ProjectAccount, self)._new_transaction()
+    def _new_transaction(self, **kwargs):
+        tx = super(ProjectAccount, self)._new_transaction(**kwargs)
         if self._project:
             self._project._associate_transaction(tx)
         return tx

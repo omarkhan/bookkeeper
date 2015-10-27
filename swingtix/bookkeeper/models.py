@@ -7,8 +7,8 @@ from .account_api import AccountBase, BookSetBase, ProjectBase
 
 
 class _AccountApi(AccountBase):
-    def _new_transaction(self):
-        return Transaction()
+    def _new_transaction(self, **kwargs):
+        return Transaction(**kwargs)
 
 
 @python_2_unicode_compatible
