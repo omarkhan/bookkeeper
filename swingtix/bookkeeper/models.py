@@ -247,7 +247,7 @@ class AccountEntry(models.Model):
 
     account = models.ForeignKey(Account, db_column='accid', related_name='entries')
 
-    amount = models.DecimalField(max_digits=8, decimal_places=2,
+    amount = models.DecimalField(max_digits=16, decimal_places=2,
         help_text="""Debits: positive; Credits: negative.""")
 
     description = models.TextField(
